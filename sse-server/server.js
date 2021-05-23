@@ -6,63 +6,69 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 
-app.get('/status', (request, response) => response.json({clients: clients.length}));
+app.get('/status', (request, response) => response.json({ sessions: sessions.length }));
 
 const PORT = 3001;
 
-let clients = [];
-let facts = [];
+let sessions = [];
+let users = [];
 
 
 function eventsHandler(request, response, next) {
-    const headers = {
-      'Content-Type': 'text/event-stream',
-      'Connection': 'keep-alive',
-      'Cache-Control': 'no-cache'
-    };
-    response.writeHead(200, headers);
-  
-    const data = `data: ${JSON.stringify(facts)}\n\n`;
-  
-    response.write(data);
-  
-    const clientId = Date.now();
-  
-    const newClient = {
-      id: clientId,
-      response
-    };
-  
-    clients.push(newClient);
-  
-    request.on('close', () => {
-      console.log(`${clientId} Connection closed`);
-      clients = clients.filter(client => client.id !== clientId);
-    });
-  }
-  
-  app.get('/events', eventsHandler);
+  const headers = {
+    'Content-Type': 'text/event-stream',
+    'Connection': 'keep-alive',
+    'Cache-Control': 'no-cache'
+  };
+  response.writeHead(200, headers);
 
+  const data = `data: ${JSON.stringify(users)}\n\n`;
 
-  function sendEventsToAll(newFact) {
-    clients.forEach(client => client.response.write(`data: ${JSON.stringify(newFact)}\n\n`))
-  }
-  
-  async function addFact(request, respsonse, next) {
-    const newFact = request.body;
-    facts.push(newFact);
-    respsonse.json(newFact)
-    return sendEventsToAll(newFact);
-  }
-  
-  app.post('/fact', addFact);
+  response.write(data);
 
-  app.get('/data', (req, res) => {
-   console.log(clients)
-  })
+  const sessionId = Date.now();
+
+  const newSession = {
+    id: sessionId,
+    response
+  };
+
+  sessions.push(newSession);
+
+  request.on('close', () => {
+    console.log(`${sessionId} Connection closed`);
+    sessions = sessions.filter(session => session.id !== sessionId);
+  });
+}
+
+app.get('/events', eventsHandler);
+
+function sendEventsToAll(newUser) {
+  sessions.forEach(session => session.response.write(`data: ${JSON.stringify(newUser)}\n\n`))
+}
+
+async function addUser(request, respsonse, next) {
+  const newUser = request.body;
+  users.push(newUser);
+  respsonse.json(newUser)
+  return sendEventsToAll(newUser);
+}
+
+app.post('/users', addUser);
+
+app.get('/data', (req, res) => {
+  res.send({activeSessions:sessions.length, registeredUsers:users.length})
+})
 
 app.listen(PORT, () => {
-  console.log(`Facts Events service listening at http://localhost:${PORT}`)
+  console.log(`SSE / Events service listening at http://localhost:${PORT}`)
 })
+
+
+module.exports = {
+  sessions,
+  users,
+  sendEventsToAll
+}
