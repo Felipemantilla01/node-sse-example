@@ -41,6 +41,7 @@ const urlBase = 'http://localhost:3001';
     return {
       users: [],
       connectionError: false,
+      events: null,
     };
   },
   methods: {
@@ -98,16 +99,19 @@ const urlBase = 'http://localhost:3001';
     },
   },
   created() {
-    const events = new EventSource(`${urlBase}/events`);
-    events.onmessage = this.handleEvent.bind(this);
-    events.onerror = this.handleError.bind(this);
-    events.onopen = this.handleOpen.bind(this);
+    this.events = new EventSource(`${urlBase}/events`);
+    this.events.onmessage = this.handleEvent.bind(this);
+    this.events.onerror = this.handleError.bind(this);
+    this.events.onopen = this.handleOpen.bind(this);
 
     // setInterval(() => {
     //   this.users.push({
     //     name: 'Felipe',
     //   });
     // }, 2000);
+  },
+  beforeUnmount() {
+    this.events.close();
   },
   watch: {
     users(newValue, oldValue) {
