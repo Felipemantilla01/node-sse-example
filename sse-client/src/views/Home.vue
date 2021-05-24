@@ -58,15 +58,16 @@ const urlBase = 'http://localhost:3001';
       companyUUID: 'bisovsddqjmtl2w52',
       appUUID: 'bisovsddqjmtl2w5k',
       hideSyncForm: false,
+      events:null,
     };
   },
   methods: {
     handleStartSync() {
       this.hideSyncForm = true;
-      const events = new EventSource(`${urlBase}/companies/${this.companyUUID}/apps/${this.appUUID}/events`);
-      events.onmessage = this.handleEvent.bind(this);
-      events.onerror = this.handleError.bind(this);
-      events.onopen = this.handleOpen.bind(this);
+      this.events = new EventSource(`${urlBase}/companies/${this.companyUUID}/apps/${this.appUUID}/events`);
+      this.events.onmessage = this.handleEvent.bind(this);
+      this.events.onerror = this.handleError.bind(this);
+      this.events.onopen = this.handleOpen.bind(this);
     },
     async handleAdd() {
       const message = {
@@ -115,6 +116,9 @@ const urlBase = 'http://localhost:3001';
   },
   created() {
     console.log('created');
+  },
+  beforeUnmount() {
+    this.events.close();
   },
   watch: {
     messages(newValue, oldValue) {
