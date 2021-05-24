@@ -7,12 +7,26 @@
 
     </div>
     <div v-if="!connectionError">
-      <div v-for="user in users" :key="user.id" class="items-container">
+      <div v-if="!hideSyncForm">
+        <input type="text" v-model="companyUUID">
+        <input type="text" v-model="appUUID">
+        <button @click="handleStartSync()">start SYNC</button>
+      </div>
+      <div v-if="hideSyncForm">
+        <h5>Sync Started for:</h5>
+        <h5>{{'CompanyUUID:' + ' ' + companyUUID + '  |  ' + 'appUUID:' + ' ' + appUUID}}</h5>
+      </div>
+      <div class="events">
+        <div v-for="message in messages" :key="message.id" class="items-container">
         <div class="item-container">
           <div>
-            {{user.firstName}} {{user.lastName}}
+            {{message.firstName}} {{message.lastName}}
           </div>
         </div>
+      </div>
+      <div class="adv-container">
+
+      </div>
       </div>
     </div>
 
@@ -39,13 +53,23 @@ const urlBase = 'http://localhost:3001';
   },
   data() {
     return {
-      users: [],
+      messages: [],
       connectionError: false,
+      companyUUID: 'bisovsddqjmtl2w52',
+      appUUID: 'bisovsddqjmtl2w5k',
+      hideSyncForm: false,
     };
   },
   methods: {
+    handleStartSync() {
+      this.hideSyncForm = true;
+      const events = new EventSource(`${urlBase}/companies/${this.companyUUID}/apps/${this.appUUID}/events`);
+      events.onmessage = this.handleEvent.bind(this);
+      events.onerror = this.handleError.bind(this);
+      events.onopen = this.handleOpen.bind(this);
+    },
     async handleAdd() {
-      const user = {
+      const message = {
         firstName: {
           faker: 'name.firstName',
         },
@@ -61,14 +85,14 @@ const urlBase = 'http://localhost:3001';
       };
 
       const data = await mocker()
-        .schema('user', user, 1)
+        .schema('message', message, 1)
         .build();
 
-      const newUser = data.user[0];
+      const newmessage = data.message[0];
 
       try {
-        const response = await axios.post(`${urlBase}/users`, {
-          ...newUser,
+        const response = await axios.post(`${urlBase}/messages`, {
+          ...newmessage,
         });
         console.log(response);
       } catch (error) {
@@ -78,15 +102,7 @@ const urlBase = 'http://localhost:3001';
     },
     handleEvent(event:MessageEvent) {
       const parsedData = JSON.parse(event.data);
-      try {
-        this.users.push(...parsedData);
-        this.users = [];
-        this.users.push(...parsedData);
-      } catch (error) {
-        this.users.push(parsedData);
-      }
       console.log(parsedData);
-      console.log(typeof parsedData);
     },
     handleError(error:Event) {
       console.log(error);
@@ -98,19 +114,10 @@ const urlBase = 'http://localhost:3001';
     },
   },
   created() {
-    const events = new EventSource(`${urlBase}/events`);
-    events.onmessage = this.handleEvent.bind(this);
-    events.onerror = this.handleError.bind(this);
-    events.onopen = this.handleOpen.bind(this);
-
-    // setInterval(() => {
-    //   this.users.push({
-    //     name: 'Felipe',
-    //   });
-    // }, 2000);
+    console.log('created');
   },
   watch: {
-    users(newValue, oldValue) {
+    messages(newValue, oldValue) {
       console.log(newValue);
     },
   },
@@ -150,5 +157,32 @@ export default class Home extends Vue {}
   justify-content: center;
   align-items: center;
   color:white;
+}
+
+input {
+  padding: 1vh;
+  border: #42b983 1px solid;
+  border-radius: 3vh;
+}
+button {
+  background-color: #42b983;
+  color: white;
+  border: none;
+  border-radius: 3vh;
+  padding:1vh;
+}
+
+input:focus {
+    outline:none;
+}
+
+.events{
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+}
+
+.adv-container{
+  display: flex;
 }
 </style>

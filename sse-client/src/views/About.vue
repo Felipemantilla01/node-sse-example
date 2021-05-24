@@ -13,24 +13,24 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import axios from 'axios';
 
 export default {
-  data() {
+  data(): { appInfo: unknown } {
     return {
       appInfo: null,
     };
   },
   methods: {
-    async loadData() {
-      const appInfo = await axios.get('http://localhost:3001/data');
-      console.log(appInfo);
-      this.appInfo = appInfo.data;
+    async loadData(): Promise<void> {
+      // const appInfo = await axios.get('http://localhost:3001/data');
+      // console.log(appInfo);
+      // this.appInfo = appInfo.data;
     },
   },
-  created() {
-    this.loadData();
+  created(): void {
+    // this.loadData();
   },
 };
 </script>

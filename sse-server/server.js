@@ -24,15 +24,17 @@ function eventsHandler(request, response, next) {
   };
   response.writeHead(200, headers);
 
-  const data = `data: ${JSON.stringify(users)}\n\n`;
+  // const data = `data: ${JSON.stringify(users)}\n\n`;
 
-  response.write(data);
+  // response.write(data);
 
   const sessionId = Date.now();
 
   const newSession = {
     id: sessionId,
-    response
+    response,
+    companyUUID:request.params.companyUUID,
+    appUUID:request.params.appUUID
   };
 
   sessions.push(newSession);
@@ -43,17 +45,21 @@ function eventsHandler(request, response, next) {
   });
 }
 
-app.get('/events', eventsHandler);
+app.get('/companies/:companyUUID/apps/:appUUID/events', eventsHandler);
 
-function sendEventsToAll(newUser) {
-  sessions.forEach(session => session.response.write(`data: ${JSON.stringify(newUser)}\n\n`))
+function sendEventsToAll(collection, changes) {
+  const event = {
+    collection,
+    changes,
+  }
+  sessions.forEach(session => session.response.write(`data: ${JSON.stringify(event)}\n\n`))
 }
 
 async function addUser(request, respsonse, next) {
-  const newUser = request.body;
-  users.push(newUser);
-  respsonse.json(newUser)
-  return sendEventsToAll(newUser);
+  // const newUser = request.body;
+  // users.push(newUser);
+  respsonse.json(request.body)
+  // return sendEventsToAll(newUser);
 }
 
 app.post('/users', addUser);
